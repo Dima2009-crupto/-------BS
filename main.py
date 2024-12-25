@@ -104,9 +104,9 @@ def login():
                 return redirect(url_for("login"))
 
             flash("Такого користувача немає у системі")
-            return redirect(url_for("singup"))
+            return redirect(url_for("signup"))
 
-    return render_template("login.html", form=form)
+    return render_template("signup.html", form=signup_for)
 
 
 @app.get("/account/")
@@ -115,7 +115,7 @@ def account():
     return render_template("account.html")
 
 
-@app.get("/login/")
+@app.get("/logout/")
 @login_required
 def logout():
     logout_user()
