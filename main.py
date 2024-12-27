@@ -3,8 +3,8 @@ import binascii
 
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
-from sqlalchemy.sql import or_
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import or_
 
 from data import data
 from data.base import create_db
@@ -17,8 +17,8 @@ from data.models import User, Tour
 app = Flask(__name__)
 app.secret_key = binascii.hexlify(os.urandom(24))
 login_manager = LoginManager()
-login_manager.login_message = "Для купівлі туру спочатку увійдіть у систему"
 login_manager.login_view = "login"
+login_manager.login_message = "Для купівлі туру спочатку увійдіть у систему"
 login_manager.init_app(app)
 
 
@@ -31,24 +31,31 @@ def context():
 
 
 @login_manager.user_loader
-def get_user(user_id: int):
+def load_user(user_id: int):
     with Session() as session:
         return session.query(User).where(User.id == user_id).first()
 
-# @app.route("/", method=["GET","POST"])
+
 @app.get("/")
 def index():
     return render_template("index.html")
 
 
+@app.get("/tour/<int:tour_id>/")
+def get_tour(tour_id):
+    with Session() as session:
+        tour = session.query(Tour).where(Tour.id == tour_id).first()
+        return render_template("tour.html", tour=tour)
+
+
 @app.get("/departure/<dep_eng>/")
 def departure(dep_eng):
     with Session() as session:
-        tours = session.query(Tour).where(Tour.departure == dep_eng).all()      
+        tours = session.query(Tour).where(Tour.departure == dep_eng).all()
         return render_template("departure.html", tours=tours)
 
 
-@app.get("/tour/<int:tour_id>/")
+@app.get("/tour/reserve/<int:tour_id>/")
 @login_required
 def reserve(tour_id):
     with Session() as session:
@@ -83,7 +90,7 @@ def singup():
 
     return render_template("singup.html", form=singup_form, departures=data.departures)
 
-                
+
 @app.route("/login/", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -104,9 +111,9 @@ def login():
                 return redirect(url_for("login"))
 
             flash("Такого користувача немає у системі")
-            return redirect(url_for("signup"))
+            return redirect(url_for("singup"))
 
-    return render_template("signup.html", form=signup_for)
+    return render_template("login.html", form=form)
 
 
 @app.get("/account/")
@@ -124,6 +131,6 @@ def logout():
 
 if __name__ == "__main__":
     create_db()
-    #write_data_to_db()
+    # write_data_to_db()
     app.run(debug=True)
     
